@@ -22,6 +22,9 @@ public class RelayOptions
     public bool EnableNip09 { get; set; } = true;
     public bool EnableNip11 { get; set; } = true;
     public bool EnableNip16 { get; set; } = true;
+    public bool EnableNip33 { get; set; } = true;
+    public bool EnableNip20 { get; set; } = true;
+    public int Nip13Difficulty { get; set; } = 0;
 
     public ECPrivKey? AdminPrivateKey
     {
@@ -37,7 +40,7 @@ public class RelayOptions
         }
     }
 
-    public string? AdminPublicKey => AdminPrivateKey?.CreateXOnlyPubKey()?.ToBytes()?.ToHex();
+    public string? AdminPublicKey => AdminPrivateKey?.CreateXOnlyPubKey()?.ToBytes()?.AsSpan().ToHex();
 
     public Uri? BTCPayServerUri { get; set; }
     public string? BTCPayServerApiKey { get; set; }
