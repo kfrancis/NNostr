@@ -4,8 +4,10 @@ using System.Security.Cryptography;
 namespace NNostr.Client;
 public class AesEncryptor : IAesEncryptor
 {
-     
+
+#if !NETSTANDARD
     [UnsupportedOSPlatform("browser")]
+#endif
     public Task<(string cipherText, string iv)> Encrypt(string plainText, byte[] key)
     {
         byte[] cipherData;
