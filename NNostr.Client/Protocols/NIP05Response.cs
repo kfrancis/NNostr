@@ -5,8 +5,8 @@ namespace NNostr.Client.Protocols;
 public class NIP05Response
 {
     [JsonPropertyName("names")]
-    public Dictionary<string, string> Names { get; set; }
+    public Dictionary<string, string> Names { get; set; } = new();
 
     [JsonPropertyName("relays")]
-    public Dictionary<string, List<string>> Relays { get; set; }
+    public Dictionary<string, List<string>> Relays { get; set; } = new();
 }

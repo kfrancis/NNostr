@@ -1,4 +1,6 @@
+using NBitcoin.Secp256k1;
 using System.Net.WebSockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -237,6 +239,46 @@ namespace NNostr.Client
             while (WebSocket != null && WebSocket.State != WebSocketState.Open && !token.IsCancellationRequested)
             {
                 await Task.Delay(100, token);
+            }
+        }
+
+        public static (string PublicKey, string PrivateKey) GenerateKey(bool asBech32 = false)
+        {
+            ECPrivKey? privKey = null;
+
+            try
+            {
+                using var randomNumberGenerator = RandomNumberGenerator.Create();
+                var randomBytes = new byte[32];
+                randomNumberGenerator.GetBytes(randomBytes);
+                if (Context.Instance.TryCreateECPrivKey(randomBytes.AsSpan(), out privKey))
+                {
+                    var pubKey = privKey.CreateXOnlyPubKey();
+                    Span<byte> privKeyc = stackalloc byte[65];
+                    privKey.WriteToSpan(privKeyc);
+                    if (asBech32)
+                    {
+                        throw new NotImplementedException();
+                        //Span<byte> pubKeyc = stackalloc byte[65];
+                        //pubKey.WriteToSpan(pubKeyc);
+                        //var encoder = Encoders.Bech32("tnos"); // ??
+                        //var pubKey1 = encoder.EncodeData(pubKeyc.Slice(1), Bech32EncodingType.BECH32);
+                        //var privKey1 = encoder.EncodeData(privKeyc.Slice(1), Bech32EncodingType.BECH32);
+                        //return new NostrKeyPair(pubKey1, privKey1);
+                    }
+                    else
+                    {
+                        return (pubKey.ToBytes().ToHex(), privKeyc.ToHex()[..64]);
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+            finally
+            {
+                privKey?.Dispose();
             }
         }
     }
