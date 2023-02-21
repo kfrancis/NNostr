@@ -15,6 +15,7 @@
         <license>MIT</license>
         <RepositoryUrl>https://github.com/Kukks/NNostr</RepositoryUrl>
         <PackageTags>Nostr</PackageTags>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>

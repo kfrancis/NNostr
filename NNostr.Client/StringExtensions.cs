@@ -12,7 +12,7 @@ namespace NNostr.Client
             using var sha256 = System.Security.Cryptography.SHA256.Create();
 
             sha256.TryComputeHash(Encoding.UTF8.GetBytes(rawData), buf, out _);
-            privKey.SignBIP340(buf).WriteToSpan(buf);
+            privKey.SignBIP340(buf[..32]).WriteToSpan(buf);
 
             return buf.ToHex();
         }
@@ -28,14 +28,6 @@ namespace NNostr.Client
         public static string ToHex(this Span<byte> bytes) 
         {
             return Convert.ToHexString(bytes).ToLowerInvariant();
-        }
-    }
-    public static class EnumeratorExtensions
-    {
-        public static IEnumerable<T> ToEnumerable<T>(this IEnumerator<T> enumerator)
-        {
-            while(enumerator.MoveNext())
-                yield return enumerator.Current;
         }
     }
 }

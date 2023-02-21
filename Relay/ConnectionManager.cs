@@ -19,14 +19,14 @@ namespace Relay
         private readonly StateManager _stateManager;
         private readonly ILogger<ConnectionManager> _logger;
         private readonly NostrEventService _nostrEventService;
-        private readonly IOptions<RelayOptions> _options;
+        private readonly IOptionsMonitor<RelayOptions> _options;
         private Task _processingSendMessages = Task.CompletedTask;
         private CancellationTokenSource _cts;
         public ConcurrentDictionary<string, WebSocket> Connections { get; set; } = new();
 
 
         public ConnectionManager(StateManager stateManager, ILogger<ConnectionManager> logger,
-            NostrEventService nostrEventService, IOptions<RelayOptions> options)
+            NostrEventService nostrEventService, IOptionsMonitor<RelayOptions> options)
         {
             _stateManager = stateManager;
             _logger = logger;
@@ -65,7 +65,7 @@ namespace Relay
                                 })));
                         }
 
-                        if(_options.Value.EnableNip15 && e.Events.Any())
+                        if(_options.CurrentValue.EnableNip15 && e.Events.Any())
                         {
                             _stateManager.PendingMessages.Writer.TryWrite((connection.Key,
                                 JsonSerializer.Serialize(new[]
@@ -90,6 +90,11 @@ namespace Relay
                         if (Connections.TryGetValue(evt.Item1, out var conn))
                         {
                             await conn.SendMessageAsync(evt.Item2, cancellationToken);
+                        }
+                        else
+                        {
+                            _logger.LogWarning(
+                                $"Had to send a message to a connection that no longer exists {evt.Item1}");
                         }
                     }
                     catch when (cancellationToken.IsCancellationRequested)
