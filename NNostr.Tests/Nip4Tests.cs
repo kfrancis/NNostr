@@ -1,16 +1,13 @@
-﻿using Microsoft.VisualStudio.TestPlatform.Utilities;
+﻿using Bogus;
 using NBitcoin.Secp256k1;
+using NNostr.Client;
+using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Xunit.Abstractions;
 using Xunit;
-using NNostr.Client;
-using Xunit.Sdk;
-using Shouldly;
-using Bogus;
+using Xunit.Abstractions;
 
 namespace NNostr.Tests
 {
@@ -35,22 +32,6 @@ namespace NNostr.Tests
                              .Where(x => x % 2 == 0)
                              .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                              .ToArray();
-        }
-
-        [Fact]
-        public void Generate1000()
-        {
-            try
-            {
-                for (var i = 0; i < 1000; i++)
-                {
-                    _ = NostrClient.GenerateKey();
-                }
-            }
-            catch
-            {
-                Assert.Fail("Could not complete without error");
-            }
         }
 
         [Fact]
@@ -91,10 +72,24 @@ namespace NNostr.Tests
             );
         }
 
+        [Fact]
+        public void Generate1000()
+        {
+            try
+            {
+                for (var i = 0; i < 1000; i++)
+                {
+                    _ = NostrClient.GenerateKey();
+                }
+            }
+            catch
+            {
+                Assert.Fail("Could not complete without error");
+            }
+        }
+
         [Theory]
-        [InlineData("River", "4bf4bd8479c9d7253ed2e7a5716ac5d0c601aa10d9882a41b48655df960eb5ce", "9b05b0b7720cf589d7f7225a183b480ab455d84eacf4e49b231c5feebde631f9", "5535554debf50f8ca351b6abdfd67d154ab753a2d9f4bfed52be8e14316f6745", "RwegVk64f54UN1G2Ee/rAg==?iv=CUMTDSvq90nxu+UaNybIgg==")]
-        [InlineData("Brand California Intelligent Cotton Mouse", "bffdfa000ae5619d9de900bd11a3db98aee2d71d4d69f9735fc7a7fec4f00d80", "9c5380be4c1c1322024189946cb7cc4f9c33b4ba19b3db43b3206a7b0a2ff90d", "42d54c5e99acc40c09180fb2bf9c3f392bbcf30ac5f1e25f90d771c442f08757", "OtENCdrbn1Vl/Jgw4x9/clENaPbB/vUmcz9FKgHkQNxG1t+06wJzRhrzXPOIxsZI?iv=NeGJW5ju87aqKncs7qikQQ==")]
-        [InlineData("Operations hack", "7428e5b7df3ee9305942aa133619f32db28c6fc1d08067c2e45ebac0732cd559", "ec657f696d8abefdddf78c9df3d809546617bf4a55a462ed8bfea4f1f7ca0579", "df59dac9033f14084b87e9ffba1ec690f859033c9410812745ad95f3b1bee19d", "48hVZkj/XC2xKDgioN2ghw==?iv=ODh6srH5WsmrP9T0CrPUjQ==")]
+        [InlineData("Representative", "69280afae7ab731fb9924b2250fa7164abdef99ec6a63da400f623dde69e9948", "59f707dc2273c50933436a4e3d21fd8b7ed9eaa8e2847307a4321bc4b9864adb", "9dd95d9b7d5f1565a3f170d8d1102ad41f0dd6f2e38b56e0ce40a6cdfae15ba3", "5fJaSGZCvX1fdR4vYb501g==?iv=wKrtsq+FtryeUS/iJCZboA==")]
         public async Task Nip04_CanDecrypt(string content, string senderPub, string receiverPub, string receiverPriv, string encContent)
         {
             // Arrange
@@ -116,17 +111,17 @@ namespace NNostr.Tests
         public async Task Nip04_CanEncrypt()
         {
             // Arrange
-            var randomSender = NostrClient.GenerateKey();
-            var (ev, receiverKp) = GivenSampleEvent(randomSender.PublicKey);
+            var (MyPublicKey, MyPrivateKey) = NostrClient.GenerateKey();
+            var (ev, receiverKp) = GivenSampleEvent(MyPublicKey);
             var origialContent = ev.Content;
 
             // Act
-            await ev.EncryptNip04EventAsync(WithKey(randomSender.PrivateKey));
+            await ev.EncryptNip04EventAsync(WithKey(MyPrivateKey));
 
             // Assert
             ev.ShouldSatisfyAllConditions(
                 e => e.Tags.Any(t => t.Data.Contains(receiverKp.PublicKey)).ShouldBeTrue(),
-                e => e.PublicKey.ShouldBe(randomSender.PublicKey)
+                e => e.PublicKey.ShouldBe(MyPublicKey)
             );
 
             ev.Content.ShouldSatisfyAllConditions(
@@ -138,11 +133,11 @@ namespace NNostr.Tests
             );
 
             _testOutputHelper.WriteLine("Content: " + origialContent);
-            _testOutputHelper.WriteLine("SenderPub: " + randomSender.PublicKey);
+            _testOutputHelper.WriteLine("SenderPub: " + MyPublicKey);
             _testOutputHelper.WriteLine("ReceiverPub: " + receiverKp.PublicKey);
             _testOutputHelper.WriteLine("ReceiverPriv: " + receiverKp.PrivateKey);
             _testOutputHelper.WriteLine("EncContent: " + ev.Content);
-            _testOutputHelper.WriteLine($"\n[InlineData(\"{origialContent}\",\"{randomSender.PublicKey}\",\"{receiverKp.PublicKey}\",\"{receiverKp.PrivateKey}\",\"{ev.Content}\")]");
+            _testOutputHelper.WriteLine($"\n[InlineData(\"{origialContent}\",\"{MyPublicKey}\",\"{receiverKp.PublicKey}\",\"{receiverKp.PrivateKey}\",\"{ev.Content}\")]");
         }
 
         private static (NostrEvent ev, (string PublicKey, string PrivateKey) receiverKp) GivenSampleEvent(string senderPubKey, string? content = null)
@@ -176,8 +171,8 @@ namespace NNostr.Tests
             }
             else
             {
-                var keys = NostrClient.GenerateKey();
-                return Context.Instance.CreateECPrivKey(StringToByteArray(keys.PrivateKey));
+                var (PublicKey, PrivateKey) = NostrClient.GenerateKey();
+                return Context.Instance.CreateECPrivKey(StringToByteArray(PrivateKey));
             }
         }
     }
