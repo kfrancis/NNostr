@@ -1,11 +1,8 @@
-using System.Buffers;
+using NBitcoin.Secp256k1;
+using NNostr.Client.Crypto;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
-
-using NBitcoin.Secp256k1;
-
-using NNostr.Client.Crypto;
 
 namespace NNostr.Client;
 
@@ -23,8 +20,9 @@ public static class NIP04
     /// <param name="privateKey">The receiver private key.</param>
     /// <param name="aes">The AES-256-CBC implementation to use in the decryption. If <c>null</c>, uses the native platform provided implementation.</param>
     /// <returns>Decrypted <see cref="NostrEvent.Content"/>.</returns>
-    public static async ValueTask<string> DecryptNip04EventAsync(this NostrEvent nostrEvent,  ECPrivKey privateKey, IAesEncryption? aes = null) => await nostrEvent.DecryptNip04EventAsync<NostrEvent, NostrEventTag>(privateKey, aes);
-    public static async ValueTask<string> DecryptNip04EventAsync<TNostrEvent, TEventTag>(this TNostrEvent nostrEvent,  ECPrivKey privateKey, IAesEncryption? aes = null) where TNostrEvent : BaseNostrEvent<TEventTag> where TEventTag : NostrEventTag, new()
+    public static async ValueTask<string> DecryptNip04EventAsync(this NostrEvent nostrEvent, ECPrivKey privateKey, IAesEncryption? aes = null) => await nostrEvent.DecryptNip04EventAsync<NostrEvent, NostrEventTag>(privateKey, aes);
+
+    public static async ValueTask<string> DecryptNip04EventAsync<TNostrEvent, TEventTag>(this TNostrEvent nostrEvent, ECPrivKey privateKey, IAesEncryption? aes = null) where TNostrEvent : BaseNostrEvent<TEventTag> where TEventTag : NostrEventTag, new()
     {
         // By default, use native AES implementation.
         aes ??= _platformAesImplementation;
@@ -34,11 +32,7 @@ public static class NIP04
             throw new ArgumentException("The event is not of kind 4", nameof(nostrEvent));
         }
 
-        var receiverPubKeyStr = nostrEvent.Tags.FirstOrDefault(tag => tag.TagIdentifier == "p")?.Data?.First();
-        if (receiverPubKeyStr is null)
-        {
-            throw new ArgumentException("The event did not specify a receiver public key", nameof(nostrEvent));
-        }
+        var receiverPubKeyStr = (nostrEvent.Tags.FirstOrDefault(tag => tag.TagIdentifier == "p")?.Data?.First()) ?? throw new ArgumentException("The event did not specify a receiver public key", nameof(nostrEvent));
 
         var ourPubKey = privateKey.CreateXOnlyPubKey();
         var ourPubKeyHex = ourPubKey.ToBytes().AsSpan().ToHex();
@@ -72,13 +66,15 @@ public static class NIP04
         byte[] plainTextContent = await aes.DecryptAsync(encryptedContentBytes, decryptionKey, iv);
         return Encoding.UTF8.GetString(plainTextContent);
     }
+
     /// <summary>
     /// Encrypts given <see cref="NostrEvent"/>'s <see cref="NostrEvent.Content"/> with AES-CBC-256 using the private key.
     /// </summary>
     /// <param name="nostrEvent">The event which content will be encrypted.</param>
     /// <param name="privateKey">The sender private key.</param>
     /// <param name="aes">The AES-256-CBC implementation to use in the encryption. If <c>null</c>, uses the native platform provided implementation.</param>
-    public static async ValueTask EncryptNip04EventAsync(this NostrEvent nostrEvent, ECPrivKey privateKey, IAesEncryption? aes = null)=> await nostrEvent.EncryptNip04EventAsync<NostrEvent, NostrEventTag>(privateKey, aes);
+    public static async ValueTask EncryptNip04EventAsync(this NostrEvent nostrEvent, ECPrivKey privateKey, IAesEncryption? aes = null) => await nostrEvent.EncryptNip04EventAsync<NostrEvent, NostrEventTag>(privateKey, aes);
+
     public static async ValueTask EncryptNip04EventAsync<TNostrEvent, TEventTag>(this TNostrEvent nostrEvent, ECPrivKey privateKey, IAesEncryption? aes = null) where TNostrEvent : BaseNostrEvent<TEventTag> where TEventTag : NostrEventTag, new()
     {
         // By default, use native AES implementation.
@@ -89,11 +85,7 @@ public static class NIP04
             throw new ArgumentException("The event is not of kind 4", nameof(nostrEvent));
         }
 
-        var receiverPubKeyStr = nostrEvent.Tags.FirstOrDefault(tag => tag.TagIdentifier == "p")?.Data?.First();
-        if (receiverPubKeyStr is null)
-        {
-            throw new ArgumentException("The event did not specify a receiver public key", nameof(nostrEvent));
-        }
+        var receiverPubKeyStr = (nostrEvent.Tags.FirstOrDefault(tag => tag.TagIdentifier == "p")?.Data?.First()) ?? throw new ArgumentException("The event did not specify a receiver public key", nameof(nostrEvent));
 
         var ourPubKey = privateKey.CreateXOnlyPubKey();
         if (nostrEvent.PublicKey is null)
@@ -116,8 +108,8 @@ public static class NIP04
 
         nostrEvent.Content = $"{Convert.ToBase64String(cipherTextBytes)}?iv={Convert.ToBase64String(ivBytes)}";
     }
-    
-    private static bool TryGetSharedPubkey(this ECXOnlyPubKey ecxOnlyPubKey, ECPrivKey key, 
+
+    private static bool TryGetSharedPubkey(this ECXOnlyPubKey ecxOnlyPubKey, ECPrivKey key,
         [NotNullWhen(true)] out ECPubKey? sharedPublicKey)
     {
         // 32 + 1 byte for the compression (0x02) prefix.
@@ -128,5 +120,5 @@ public static class NIP04
         bool success = Context.Instance.TryCreatePubKey(input, out var publicKey);
         sharedPublicKey = publicKey?.GetSharedPubkey(key);
         return success;
-    } 
+    }
 }

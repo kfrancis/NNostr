@@ -89,7 +89,7 @@ namespace NNostr.Tests
         }
 
         [Theory]
-        [InlineData("Representative", "69280afae7ab731fb9924b2250fa7164abdef99ec6a63da400f623dde69e9948", "59f707dc2273c50933436a4e3d21fd8b7ed9eaa8e2847307a4321bc4b9864adb", "9dd95d9b7d5f1565a3f170d8d1102ad41f0dd6f2e38b56e0ce40a6cdfae15ba3", "5fJaSGZCvX1fdR4vYb501g==?iv=wKrtsq+FtryeUS/iJCZboA==")]
+        [InlineData("Guarani", "6b6945b592d9690e1017856e8ff2173136f9b556db3cf62b6efa0712807fbcda", "f383f99557cbff0f8bc7569d3bc96e3add989a6fca78e8ca24ca9d89daced29b", "64109d2af3ee77b5564b96902ebd7a5ef621e6f956020cee29261c913aa93ced", "Fo2kKdCmAk6JULpt503Lxg==?iv=tlklmSI8kmK939dflSZT8g==")]
         public async Task Nip04_CanDecrypt(string content, string senderPub, string receiverPub, string receiverPriv, string encContent)
         {
             // Arrange

@@ -1,16 +1,8 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace NNostr.Client.Protocols
 {
-    public class NIP05Response
-    {
-        [JsonPropertyName("names")]
-        public Dictionary<string, string> Names { get; set; } = new();
-
-        [JsonPropertyName("relays")]
-        public Dictionary<string, List<string>> Relays { get; set; } = new();
-    }
-
     /// <summary>
     /// https://github.com/nostr-protocol/nips/blob/master/05.md
     /// </summary>
